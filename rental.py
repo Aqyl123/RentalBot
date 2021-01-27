@@ -33,7 +33,8 @@ async def on_message(message):
         embedStart4 = discord.Embed(color=0xFF0000)
         embedStart4.add_field(name="Rental Bot", value="How much is the rental?")
         embedStart4.set_footer(text="Created by @Expected")
-
+        
+        # INFO GATHERING
         botName = await client.wait_for('message')
         await botName.delete()
         await message.edit(embed=embedStart2)
