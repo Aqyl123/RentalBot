@@ -13,8 +13,6 @@ FINISHED:
 -  `!view` command
 -  Delete option
 
-<b>`!rental` command</b>
 <img src='https://i.imgur.com/zMpIn1K.png' width='500' height='500'>
 
-<b>`!view` command</b>
 <img src='https://i.gyazo.com/68aed3b978a24c5881ffb1ae6987fe7a.png' width='500' height='500'>
