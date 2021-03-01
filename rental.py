@@ -2,9 +2,14 @@ from datetime import datetime
 from datetime import timedelta
 import discord
 import asyncio
+import sqlite3
 
 token = 'YOUR TOKEN HERE'
 client = discord.Client()
+connection = sqlite3.connect('rentals.db')
+cursor = connection.cursor()
+cursor.execute("CREATE TABLE IF NOT EXISTS rental (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, renter TEXT, duration INTEGER, price INTEGER, start TEXT, end TEXT)")
+connection.commit()
 
 @client.event
 async def on_ready():
@@ -27,14 +32,13 @@ async def on_message(message):
         embedStart2.set_footer(text="Created by @Expected")
 
         embedStart3 = discord.Embed(color=0xFF0000)
-        embedStart3.add_field(name="Rental Bot", value="How long is it being rented for (DAYS)?")
+        embedStart3.add_field(name="Rental Bot", value="How long is it being rented for (Days)?")
         embedStart3.set_footer(text="Created by @Expected")
 
         embedStart4 = discord.Embed(color=0xFF0000)
         embedStart4.add_field(name="Rental Bot", value="How much is the rental?")
         embedStart4.set_footer(text="Created by @Expected")
-        
-        # INFO GATHERING
+
         botName = await client.wait_for('message')
         await botName.delete()
         await message.edit(embed=embedStart2)
@@ -65,5 +69,40 @@ async def on_message(message):
         embed.add_field(name='End Date:', value='{}'.format(endDate), inline=False)
         embed.set_footer(icon_url='https://pbs.twimg.com/profile_images/1325672283881484289/oaGtVIOD_400x400.png', text='Created by @Expected')
         await message.channel.send(embed=embed)
+
+        cursor.execute("INSERT INTO rental(name, renter, duration, price, start, end) VALUES (?, ?, ?, ?, ?, ?)", (botName.content, renterName.content, rentalLength.content, rentalPrice.content, startDate, endDate))
+        connection.commit()
+
+    if message.content.startswith('!view'):
+        rows = cursor.execute("SELECT id, name, renter, duration, price, start, end FROM rental").fetchall()
+        for x in rows:
+            embed = discord.Embed(title='Rental #{}'.format(x[0]), color=0x0000FF)
+            embed.set_thumbnail(url='https://www.pngkit.com/png/detail/231-2316751_database-database-icon-png.png')
+            embed.add_field(name='Bot Name:', value=x[1], inline=False)
+            embed.add_field(name='Renter Name:', value=x[2], inline=False)
+            embed.add_field(name='Rental Duration:', value='{} day(s)'.format(x[3]), inline=False)
+            embed.add_field(name='Rental Price:', value='${}'.format(x[4]), inline=False)
+            embed.add_field(name='Start Date:', value=x[5], inline=False)
+            embed.add_field(name='End Date:', value=x[6], inline=False)
+            embed.set_footer(icon_url='https://pbs.twimg.com/profile_images/1325672283881484289/oaGtVIOD_400x400.png', text='Created by @Expected')
+            msg = await message.channel.send(embed=embed)
+            await msg.add_reaction('\U0001F5D1')
+
+@client.event
+async def on_raw_reaction_add(payload):
+    if payload.user_id == client.user.id:
+        return
+
+    if str(payload.emoji) == '\U0001F5D1':
+        channel = await client.fetch_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        try:
+            embed = message.embeds[0]
+            rental_id = embed.title.rsplit('#', 1)[1]
+        except:
+            return
+        await message.delete()
+        cursor.execute("DELETE FROM rental WHERE id={}".format(rental_id))
+        connection.commit()
 
 client.run(token)
